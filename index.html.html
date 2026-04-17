@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Đánh Giá Thực Hiện Công Việc</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #1B2A4A; --navy2: #243556; --gold: #E8B84B; --gold-dark: #C89A2E;
+    --bg: #F0F3FA; --card: #FFFFFF; --text: #1B2A4A; --muted: #6B7FA3; --border: #D8E0EE;
+    --green-bg: #E1F5EE; --green-b: #0F6E56; --green-t: #085041;
+    --red-bg: #FCEBEB; --red-b: #A32D2D; --red-t: #791F1F;
+  }
+  body { font-family: 'Be Vietnam Pro', sans-serif; background: var(--bg); min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
+  .container { width: 100%; max-width: 660px; }
+  .header { text-align: center; margin-bottom: 1.75rem; animation: fadeDown 0.5s ease both; }
+  .header-tag { display: inline-block; background: var(--navy); color: var(--gold); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 5px 14px; border-radius: 20px; margin-bottom: 12px; }
+  .header h1 { font-size: 24px; font-weight: 700; color: var(--navy); line-height: 1.3; }
+  .progress-wrap { margin-bottom: 1.5rem; animation: fadeDown 0.5s 0.1s ease both; }
+  .progress-info { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
+  .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--navy), #3B5998); border-radius: 3px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+  .dots { display: flex; gap: 5px; margin-top: 10px; justify-content: center; flex-wrap: wrap; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.3s ease; }
+  .dot.active { background: var(--navy); transform: scale(1.3); }
+  .dot.done { background: var(--green-b); }
+  .slide-wrap { position: relative; }
+  .slide { display: none; }
+  .slide.active { display: block; animation: slideIn 0.35s ease; }
+  .card { background: var(--card); border-radius: 16px; padding: 1.75rem; box-shadow: 0 4px 24px rgba(27,42,74,0.08), 0 1px 4px rgba(27,42,74,0.06); }
+  .q-num { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-dark); margin-bottom: 10px; }
+  .q-text { font-size: 16px; font-weight: 600; color: var(--text); line-height: 1.55; margin-bottom: 1.4rem; }
+  .options { display: flex; flex-direction: column; gap: 9px; }
+  .opt { display: flex; align-items: flex-start; gap: 13px; padding: 13px 15px; border: 1.5px solid var(--border); border-radius: 12px; cursor: pointer; background: #fff; transition: all 0.2s ease; user-select: none; }
+  .opt:hover:not(.locked) { border-color: var(--navy); background: #F4F7FF; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(27,42,74,0.1); }
+  .opt.locked { cursor: default; }
+  .opt.correct { border-color: var(--green-b); background: var(--green-bg); animation: popIn 0.3s ease; }
+  .opt.wrong { border-color: var(--red-b); background: var(--red-bg); animation: shake 0.4s ease; }
+  .badge { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; background: #EEF2FF; color: var(--navy); border: 1.5px solid var(--border); transition: all 0.2s; margin-top: 1px; }
+  .opt.correct .badge { background: var(--green-t); color: #fff; border-color: var(--green-t); }
+  .opt.wrong .badge { background: var(--red-t); color: #fff; border-color: var(--red-t); }
+  .opt-text { font-size: 13.5px; color: var(--text); line-height: 1.45; }
+  .opt.correct .opt-text { color: var(--green-t); font-weight: 600; }
+  .opt.wrong .opt-text { color: var(--red-t); }
+  .feedback { display: none; align-items: flex-start; gap: 10px; margin-top: 13px; padding: 12px 15px; border-radius: 10px; font-size: 13px; font-weight: 500; line-height: 1.5; animation: slideUp 0.3s ease; }
+  .feedback.show { display: flex; }
+  .feedback.ok { background: var(--green-bg); color: var(--green-t); border: 1px solid #9FE1CB; }
+  .feedback.no { background: var(--red-bg); color: var(--red-t); border: 1px solid #F09595; }
+  .fb-dot { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+  .feedback.ok .fb-dot { background: var(--green-t); color: #fff; }
+  .feedback.no .fb-dot { background: var(--red-t); color: #fff; }
+  .explain-box { display: none; margin-top: 10px; padding: 11px 14px; background: #F8F9FF; border-left: 3px solid var(--navy); border-radius: 0 8px 8px 0; font-size: 12.5px; color: var(--muted); line-height: 1.6; animation: slideUp 0.3s ease; }
+  .explain-box.show { display: block; }
+  .next-wrap { margin-top: 1.25rem; display: flex; justify-content: flex-end; }
+  .next-btn { display: none; padding: 11px 26px; background: var(--navy); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s ease; animation: fadeIn 0.3s ease; }
+  .next-btn.show { display: block; }
+  .next-btn:hover { background: #243556; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(27,42,74,0.25); }
+  .result { background: var(--card); border-radius: 16px; padding: 2.5rem 2rem; text-align: center; box-shadow: 0 4px 24px rgba(27,42,74,0.08); animation: fadeDown 0.5s ease; display: none; }
+  .result.show { display: block; }
+  .trophy { font-size: 52px; margin-bottom: 1rem; animation: bounce 0.6s ease; }
+  .r-score { font-size: 46px; font-weight: 700; color: var(--navy); }
+  .r-denom { font-size: 20px; color: var(--muted); font-weight: 400; }
+  .r-label { font-size: 15px; color: var(--muted); margin: 8px 0 1.5rem; font-weight: 500; }
+  .r-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; margin-bottom: 1.75rem; }
+  .r-cell { padding: 10px 4px; border-radius: 10px; border: 1.5px solid var(--border); font-size: 12px; font-weight: 500; color: var(--muted); }
+  .r-cell span { display: block; font-size: 18px; font-weight: 700; margin-top: 4px; }
+  .r-cell.ok { border-color: #9FE1CB; background: var(--green-bg); }
+  .r-cell.ok span { color: var(--green-t); }
+  .r-cell.no { border-color: #F09595; background: var(--red-bg); }
+  .r-cell.no span { color: var(--red-t); }
+  .r-btn { padding: 13px 32px; background: var(--navy); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+  .r-btn:hover { background: #243556; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(27,42,74,0.25); }
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  @keyframes slideIn { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes slideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes popIn { 0%{transform:scale(1)} 40%{transform:scale(1.02)} 100%{transform:scale(1)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+  @keyframes bounce { 0%,100%{transform:scale(1)} 40%{transform:scale(1.2)} 70%{transform:scale(0.95)} }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-tag">Quản trị nguồn nhân lực</div>
+    <h1>Đánh Giá Thực Hiện Công Việc</h1>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-info">
+      <span id="prog-text">Câu 1 / 15</span>
+      <span id="score-text">Đúng: 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="dots" id="dots"></div>
+  </div>
+  <div class="slide-wrap" id="slide-wrap"></div>
+  <div class="result" id="result"></div>
+</div>
+<script>
+const QS=[
+  {q:"Đâu là định nghĩa đầy đủ và chính xác nhất về Đánh giá thực hiện công việc?",opts:["Là sự đánh giá có hệ thống và chính thức về năng lực và thái độ của người lao động dựa trên quan sát của quản lý, từ đó đưa ra quyết định khen thưởng hoặc kỷ luật.","Là quá trình kiểm tra định kỳ tình hình thực hiện công việc của người lao động dựa trên mục tiêu tổ chức nhằm xác định khoảng cách giữa năng lực thực tế và yêu cầu công việc.","Là sự đánh giá có hệ thống và chính thức tình hình thực hiện công việc của người lao động trong quan hệ so sánh với các tiêu chuẩn đã được xây dựng và thảo luận về sự đánh giá đó với người lao động.","Là sự đánh giá chính thức và khách quan kết quả làm việc bằng cách so sánh với đồng nghiệp trong cùng bộ phận, sau đó thông báo kết quả để cải thiện hiệu suất."],ans:2,explain:"Khái niệm ĐGTHCV cần đủ 3 yếu tố: có hệ thống & chính thức + so sánh với tiêu chuẩn đã xây dựng + thảo luận phản hồi với người lao động."},
+  {q:"Một hệ thống đánh giá thực hiện công việc hoàn chỉnh cần được thiết lập dựa trên những yếu tố cơ bản nào?",opts:["Xây dựng tiêu chuẩn thực hiện; Đo lường kết quả dựa trên tiêu thức trong tiêu chuẩn; Cung cấp thông tin phản hồi cho người lao động và bộ phận quản lý nguồn nhân lực.","Thiết lập chỉ tiêu kinh doanh cho từng cá nhân; Theo dõi sát quá trình làm việc hàng ngày; Xếp loại khen thưởng hoặc kỷ luật định kỳ hàng năm.","Xây dựng bảng mô tả công việc cụ thể; Tổ chức kỳ thi sát hạch tập trung; Công khai kết quả đánh giá lên bảng tin nội bộ.","Xác định kỳ vọng của nhà quản lý; Ghi chép các sự kiện quan trọng; Thông báo điều chỉnh lương dựa trên quan sát trực tiếp."],ans:0,explain:"Đáp án A hội đủ 3 yếu tố cốt lõi: (1) Tiêu chuẩn thực hiện, (2) Đo lường theo tiêu thức, (3) Thông tin phản hồi hai chiều cho nhân viên và bộ phận nhân sự."},
+  {q:"Phương án nào mô tả đầy đủ các yêu cầu để hệ thống đánh giá thực hiện công việc vận hành hiệu quả?",opts:["Tính kinh tế, tính bảo mật cao và sử dụng thang đo định lượng phức tạp để chứng minh trình độ người quản lý.","Tính linh hoạt để thay đổi tiêu chuẩn theo cá nhân, tính ưu tiên cho nhân viên thâm niên và tính bảo mật tuyệt đối.","Tính phù hợp với mục tiêu quản lý, tính nhạy cảm phân biệt mức độ hoàn thành, tính tin cậy, tính được chấp nhận và tính thực tiễn.","Tính cạnh tranh giữa nhân viên, tính công khai về lương thưởng và tính bắt buộc không cần đồng thuận."],ans:2,explain:"5 yêu cầu của hệ thống ĐGTHCV: tính phù hợp, tính nhạy cảm, tính tin cậy, tính được chấp nhận, tính thực tiễn."},
+  {q:"Người quản lý chấm 'Xuất sắc' cho nhân viên có ngoại hình ưa nhìn nhưng chấm 'Trung bình' cho tất cả người còn lại để không phải giải thích. Hệ thống đã vi phạm điều gì?",opts:["Lỗi hào quang và Lỗi xu hướng trung bình; vi phạm tính tin cậy và tính nhạy cảm.","Lỗi thiên vị cá nhân và Lỗi gần đây; vi phạm tính thực tiễn.","Lỗi hào quang và Lỗi xu hướng trung bình; vi phạm tính phù hợp.","Lỗi thiên kiến xác nhận và Lỗi hào quang; vi phạm tính được chấp nhận."],ans:0,explain:"Lóa mắt bởi ngoại hình = lỗi hào quang. Chấm sàn sàn để an toàn = lỗi xu hướng trung bình. Kết quả làm hệ thống mất tính nhạy cảm và tính tin cậy."},
+  {q:"Để loại bỏ 'lỗi gần đây' và 'định kiến cá nhân' trong đánh giá nhân sự, doanh nghiệp nên áp dụng kết hợp biện pháp nào?",opts:["Chỉ tập trung đào tạo kỹ năng giao tiếp cho quản lý và yêu cầu nhân viên tự viết báo cáo thành tích cuối kỳ.","Sử dụng phương pháp ghi chép Sự kiện quan trọng xuyên suốt kỳ đánh giá và triển khai mô hình Đánh giá 360 độ.","Áp dụng phương pháp xếp hạng cưỡng bức và tổ chức phỏng vấn đánh giá công khai trước toàn công ty.","Yêu cầu bộ phận HR trực tiếp chấm điểm thay quản lý và tăng cường tiêu chí đánh giá định tính."],ans:1,explain:"Ghi chép Sự kiện quan trọng → xóa lỗi hồi tưởng ngắn hạn. Đánh giá 360 độ → trung hòa định kiến cá nhân của một người quản lý."},
+  {q:"Sự khác biệt cốt lõi giữa Đánh giá thực hiện công việc và Quản lý thực hiện công việc là gì?",opts:["Đánh giá đo lường định tính, còn Quản lý chỉ đo lường định lượng.","Đánh giá tập trung vào kết quả định kỳ, trong khi Quản lý theo dõi quá trình liên tục để phát triển nhân lực.","Đánh giá tập trung vào quá trình, trong khi Quản lý tập trung vào kết quả.","Đánh giá chỉ dành cho quản lý cấp cao, còn Quản lý dành cho mọi nhân viên."],ans:1,explain:"Đánh giá = đo lường định kỳ để ra quyết định nhân sự. Quản lý = hệ thống liên tục hỗ trợ và cải thiện nguồn nhân lực."},
+  {q:"Yêu cầu 'tính nhạy cảm' trong một hệ thống đánh giá hiệu quả có ý nghĩa gì?",opts:["Phương tiện đánh giá đơn giản, dễ hiểu và dễ sử dụng.","Liên quan trực tiếp đến mục tiêu tổ chức và phân tích công việc.","Có khả năng phân biệt rõ người làm tốt và người làm chưa tốt.","Đảm bảo sự nhất quán trong kết quả dù do những người khác nhau đánh giá."],ans:2,explain:"Tính nhạy cảm = khả năng nhận diện rõ sự chênh lệch hiệu suất giữa các cá nhân, tránh cào bằng và triệt tiêu động lực phấn đấu."},
+  {q:"Phương pháp đánh giá nào khắc phục nhược điểm chủ quan của thang đo đồ họa bằng cách mô tả mỗi mức điểm bằng các hành vi cụ thể, quan sát được?",opts:["Phương pháp Thang đo hành vi BARS.","Quản trị theo mục tiêu MBO.","Phương pháp Thang đồ họa Graphic Rating Scale.","Phương pháp Đánh giá 360 độ."],ans:0,explain:"BARS (Behaviorally Anchored Rating Scale) sử dụng mô tả hành vi chi tiết cho từng mức điểm, giảm thiểu tính chủ quan của người đánh giá."},
+  {q:"Trong quá trình đánh giá, người quản lý cho điểm toàn bộ tiêu chí ở mức cao chỉ vì nhân viên ăn mặc chỉn chu, lịch sự và lễ phép. Người quản lý mắc lỗi tâm lý nào?",opts:["Lỗi xu hướng trung bình.","Lỗi hào quang.","Lỗi thiên vị.","Lỗi thiên kiến xác nhận."],ans:1,explain:"Lỗi hào quang: một điểm mạnh nổi bật (ngoại hình, giao tiếp) làm lu mờ đánh giá, khiến người chấm cao toàn bộ tiêu chí khác một cách thiếu khách quan."},
+  {q:"Để khắc phục sai lệch tâm lý do trí nhớ ngắn hạn trong đánh giá, nhà quản lý nên áp dụng biện pháp nào?",opts:["Áp dụng phương pháp đánh giá 360 độ.","Sử dụng phần mềm HR Tech.","Đánh giá theo thang đo đồ họa.","Sử dụng nhật ký 'Sự kiện quan trọng'."],ans:3,explain:"Ghi chép Sự kiện quan trọng (Critical Incident) xuyên suốt kỳ đánh giá cung cấp dữ liệu khách quan, tránh quản lý chỉ nhớ những gì mới diễn ra gần đây."},
+  {q:"Đánh giá 360 độ thu thập thông tin từ những nguồn nào?",opts:["Chỉ từ cấp trên trực tiếp và bộ phận nhân sự.","Từ cấp trên, đồng nghiệp, cấp dưới và đôi khi cả khách hàng.","Chỉ từ đồng nghiệp cùng cấp trong cùng bộ phận.","Từ hội đồng ban giám đốc và kiểm toán nội bộ."],ans:1,explain:"Đánh giá 360 độ thu thập phản hồi đa chiều: cấp trên, đồng nghiệp, cấp dưới và khách hàng — tạo bức tranh toàn diện về năng lực cá nhân."},
+  {q:"Phương pháp MBO (Quản trị theo mục tiêu) trong đánh giá thực hiện công việc nhấn mạnh điều gì?",opts:["Người quản lý đơn phương thiết lập mục tiêu và kiểm tra kết quả cuối kỳ.","Đánh giá dựa trên hành vi hàng ngày thay vì kết quả đầu ra.","Nhân viên và quản lý cùng thiết lập mục tiêu cụ thể, đo lường được và đánh giá theo mục tiêu đó.","Xếp hạng nhân viên theo đường cong phân phối chuẩn cưỡng bức."],ans:2,explain:"MBO nhấn mạnh quá trình hai chiều: quản lý và nhân viên cùng xác lập mục tiêu SMART, tạo cam kết và cơ sở đánh giá khách quan."},
+  {q:"Lỗi 'xu hướng trung bình' trong đánh giá gây ra hệ quả gì nghiêm trọng nhất cho tổ chức?",opts:["Tăng chi phí đào tạo không cần thiết.","Triệt tiêu động lực của người có thành tích xuất sắc vì không được ghi nhận xứng đáng.","Gây mất bảo mật thông tin nhân sự.","Làm tăng tỷ lệ vắng mặt của nhân viên."],ans:1,explain:"Khi mọi người đều bị đánh giá ở mức trung bình, người giỏi không được ghi nhận xứng đáng, dẫn đến mất động lực, giảm hiệu suất và nguy cơ nghỉ việc."},
+  {q:"Tính 'tin cậy' của hệ thống đánh giá thực hiện công việc có nghĩa là gì?",opts:["Hệ thống được thiết kế bởi các chuyên gia nhân sự có uy tín.","Kết quả đánh giá nhất quán khi cùng một nhân viên được đánh giá bởi những người khác nhau hoặc vào những thời điểm khác nhau.","Tiêu chuẩn đánh giá được giữ bí mật để tránh gian lận.","Hệ thống đã được kiểm tra và phê duyệt bởi ban giám đốc."],ans:1,explain:"Tính tin cậy = sự nhất quán của kết quả: cùng một người được các người đánh giá khác nhau cho ra kết quả tương đương, không bị ảnh hưởng bởi cảm tính cá nhân."},
+  {q:"Phương pháp ghi chép 'Sự kiện quan trọng' (Critical Incident) hỗ trợ đánh giá thực hiện công việc như thế nào?",opts:["Giúp quản lý so sánh nhân viên với nhau theo thứ hạng từ cao đến thấp.","Cung cấp bằng chứng hành vi cụ thể trong suốt kỳ đánh giá, hạn chế lỗi hồi tưởng và chủ quan.","Thay thế hoàn toàn các phương pháp đánh giá định lượng khác.","Chỉ phù hợp với đánh giá nhân viên cấp cao và quản lý."],ans:1,explain:"Critical Incident ghi chép hành vi xuất sắc hoặc kém cỏi xuyên suốt kỳ → cung cấp bằng chứng thực tế, tránh lỗi gần đây và tăng tính khách quan khi phản hồi."}
+];
+
+const L=["A","B","C","D"];
+let cur=0,score=0,results=[];
+
+function buildDots(){
+  document.getElementById('dots').innerHTML=QS.map((_,i)=>`<div class="dot${i===0?' active':''}" id="dot-${i}"></div>`).join('');
+}
+
+function updateProgress(){
+  document.getElementById('prog-text').textContent=`Câu ${cur+1} / ${QS.length}`;
+  document.getElementById('score-text').textContent=`Đúng: ${score}`;
+  document.getElementById('prog-fill').style.width=(cur/QS.length*100)+'%';
+  QS.forEach((_,i)=>{
+    const d=document.getElementById('dot-'+i);
+    if(d) d.className='dot'+(i<cur?' done':i===cur?' active':'');
+  });
+}
+
+function buildSlide(qi){
+  const q=QS[qi];
+  const div=document.createElement('div');
+  div.className='slide'+(qi===0?' active':'');
+  div.id='slide-'+qi;
+  div.innerHTML=`
+    <div class="card">
+      <div class="q-num">Câu ${qi+1} trong ${QS.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="options" id="opts-${qi}">
+        ${q.opts.map((o,oi)=>`<div class="opt" id="opt-${qi}-${oi}" onclick="pick(${qi},${oi})"><div class="badge">${L[oi]}</div><div class="opt-text">${o}</div></div>`).join('')}
+      </div>
+      <div class="feedback" id="fb-${qi}"><div class="fb-dot" id="fb-icon-${qi}"></div><span id="fb-txt-${qi}"></span></div>
+      <div class="explain-box" id="exp-${qi}">${q.explain}</div>
+      <div class="next-wrap"><button class="next-btn" id="btn-${qi}" onclick="nextQ(${qi})">${qi<QS.length-1?'Câu tiếp theo &rarr;':'Xem kết quả &rarr;'}</button></div>
+    </div>`;
+  return div;
+}
+
+function init(){
+  const wrap=document.getElementById('slide-wrap');
+  wrap.innerHTML='';
+  QS.forEach((_,i)=>wrap.appendChild(buildSlide(i)));
+  buildDots(); updateProgress();
+}
+
+function pick(qi,oi){
+  if(results[qi]!==undefined) return;
+  const q=QS[qi];
+  const correct=oi===q.ans;
+  results[qi]=correct;
+  if(correct) score++;
+  document.querySelectorAll(`#opts-${qi} .opt`).forEach(o=>o.classList.add('locked'));
+  document.getElementById(`opt-${qi}-${oi}`).classList.add(correct?'correct':'wrong');
+  if(!correct) document.getElementById(`opt-${qi}-${q.ans}`).classList.add('correct');
+  const fb=document.getElementById(`fb-${qi}`);
+  fb.className='feedback show '+(correct?'ok':'no');
+  document.getElementById(`fb-icon-${qi}`).textContent=correct?'✓':'✗';
+  document.getElementById(`fb-txt-${qi}`).textContent=correct?'Chính xác!':'Chưa đúng. Đáp án đúng là '+L[q.ans]+'.';
+  document.getElementById(`exp-${qi}`).classList.add('show');
+  document.getElementById('score-text').textContent=`Đúng: ${score}`;
+  document.getElementById(`btn-${qi}`).classList.add('show');
+}
+
+function nextQ(qi){
+  document.getElementById('slide-'+qi).classList.remove('active');
+  if(qi<QS.length-1){
+    cur=qi+1;
+    document.getElementById('slide-'+cur).classList.add('active');
+    updateProgress();
+    window.scrollTo({top:0,behavior:'smooth'});
+  } else { showResult(); }
+}
+
+function showResult(){
+  document.getElementById('slide-wrap').style.display='none';
+  document.getElementById('prog-fill').style.width='100%';
+  document.querySelectorAll('.dot').forEach(d=>d.className='dot done');
+  document.getElementById('prog-text').textContent='Hoàn thành!';
+  document.getElementById('score-text').textContent=`Đúng: ${score} / ${QS.length}`;
+  const pct=score/QS.length;
+  let trophy,label;
+  if(pct===1){trophy='🏆';label='Xuất sắc! Bạn trả lời đúng tất cả 15 câu!';}
+  else if(pct>=.8){trophy='🎉';label='Rất tốt! Bạn nắm vững kiến thức.';}
+  else if(pct>=.6){trophy='📚';label='Khá ổn! Ôn thêm một chút nữa nhé.';}
+  else{trophy='💪';label='Cần ôn thêm! Hãy thử lại nhé.';}
+  const grid=QS.map((_,i)=>`<div class="r-cell ${results[i]?'ok':'no'}">Câu ${i+1}<span>${results[i]?'✓':'✗'}</span></div>`).join('');
+  const res=document.getElementById('result');
+  res.innerHTML=`<div class="trophy">${trophy}</div><div class="r-score">${score}<span class="r-denom"> / ${QS.length}</span></div><div class="r-label">${label}</div><div class="r-grid">${grid}</div><button class="r-btn" onclick="restart()">Làm lại từ đầu</button>`;
+  res.classList.add('show');
+}
+
+function restart(){
+  cur=0; score=0; results=[];
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('slide-wrap').style.display='';
+  init();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+init();
+</script>
+</body>
+</html>
